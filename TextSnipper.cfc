@@ -1,26 +1,38 @@
 <cfcomponent output="false">
+  <cfset variables.maxLength = 400 />  
+  <cfset variables.keywords = "" />
 
-	<cffunction name="init">
+	<cffunction name="init">     
 		<cfreturn this />
-	</cffunction>	
+	</cffunction>	 
 	
-	<cffunction name = "blurb" output="false"> 
+	<cffunction name="setKeywords">
+		<cfargument name="keywordList"/>
+		<cfset variables.keywords = arguments.keywordList />
+		<cfreturn this />
+	</cffunction>
+	                        
+	<cffunction name="setMaxLength">
+		<cfargument name="numberOfCharacters"/>
+		<cfset variables.maxLength = arguments.numberOfCharacters />  
+		<cfreturn this />
+	</cffunction>
+	
+	<cffunction name = "snip" output="false"> 
 		<cfargument name="bodyWithHTML">
-		<cfargument name="keywords">
-		<cfargument name="length">
 		
 		<cfset var keywordCenter  = "">
 		<cfset var startPosition = "">
 		<cfset var result = "">
 		<cfset var body = stripHTML(bodyWithHTML)>
 				
-		<cfif len(body) lte length>
-			<cfreturn highlightKeywords(body, arguments.keywords)>
+		<cfif len(body) lte maxLength>
+			<cfreturn highlightKeywords(body, keywords)>
 		</cfif>
 		
-		<cfset keywordCenter  = findKeywordCenter(body, keywords, length)>
-		<cfset startPosition = max(int(keywordCenter - length/2), 1)>
-		<cfset result = mid(body, startPosition, length)>
+		<cfset keywordCenter  = findKeywordCenter(body, keywords, maxLength)>
+		<cfset startPosition = max(int(keywordCenter - maxLength/2), 1)>
+		<cfset result = mid(body, startPosition, maxLength)>
 	
 		<!--- strip first word (or partial word) --->
 		<cfif startPosition neq 1>
@@ -30,26 +42,11 @@
 		<!--- strip last word (or partial word) --->
 		<cfset result = reReplaceNoCase(result, " \S+$", "") & " &hellip;">
 		
-		<cfreturn highlightKeywords(result, arguments.keywords)>
+		<cfreturn highlightKeywords(result, keywords)>
 		
 	</cffunction>
 
-	
-	<cffunction name = "summarize" output="false">
-		<cfargument name="htmlString">
-		<cfargument name="length" default="155">
-		<cfargument name="addElipse" default="true">
-		<cfset var result = stripHTML(htmlString)>
-		<cfif len(result) gt arguments.length>
-			<cfset result = left(result, arguments.length + 1)>
-			<cfset result = trim(reReplaceNoCase(result, " \S+$", ""))>
-			<cfif arguments.addElipse>
-				<cfset result = "#result#&hellip;">
-			</cfif>
-		</cfif>
-		<cfreturn result>
-	</cffunction>
-	
+ 	
 	<cffunction name = "stripHTML" output="false">
 		<cfargument name="htmlString">
 		<cfreturn trim(ReReplaceNoCase(arguments.htmlString, "<[^>]*>", "", "ALL"))>
@@ -58,7 +55,7 @@
 	<cffunction name = "findKeywordCenter" output="false">
 		<cfargument name="body">
 		<cfargument name="keywords">
-		<cfargument name="length">
+		<cfargument name="maxLength">
 
 		<cfset var leftStack = arrayNew(1)>
 		<cfset var rightStack = arrayNew(1)>	
@@ -87,7 +84,7 @@
 		</cfloop>
 
 		<cfloop condition = "arraylen(leftStack) gt 0">
-			<cfloop condition = "arrayLen(rightStack) gt 0 and leftStack[1] + length gte rightStack[1]">
+			<cfloop condition = "arrayLen(rightStack) gt 0 and leftStack[1] + maxLength gte rightStack[1]">
 				<cfset keywordsFound = arrayLen(leftStack) - arrayLen(rightStack) + 1>
 				<cfif keywordsFound gt mostKeywords>
 					<cfset mostKeywords = keywordsFound>
